@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>El Sabroso — Payment Schedule</title>
+<meta name="description" content="Payment schedule and cash requirement tracker for El Sabroso Lechon Manok">
+<meta name="theme-color" content="#FFFFFF">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-96.png">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="El Sabroso Pay">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF8F4;
+  --bg-soft:#FFFFFF;
+  --card:#FFFFFF;
+  --card-2:#FFF9EE;
+  --input-bg:#F5F1E9;
+  --line: rgba(43,24,16,0.10);
+  --line-strong: rgba(43,24,16,0.16);
+  --flame1:#FF7A00;
+  --flame2:#FF9A3D;
+  --red:#C0392B;
+  --red-deep:#8E2418;
+  --gold:#F4B400;
+  --gold-light:#B87A00;
+  --cream:#2B1810;
+  --text:#2B1810;
+  --text-dim:#8A7256;
+  --text-dimmer:#AE9878;
+  --success:#2E9C5C;
+  --success-bg: rgba(46,156,92,0.10);
+  --danger:#D8383D;
+  --danger-bg: rgba(216,56,61,0.09);
+  --warning:#E2960C;
+  --warning-bg: rgba(226,150,12,0.10);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 4px 18px rgba(43,24,16,0.07);
+  --topbar-h: 62px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+html,body{height:100%;}
+body{
+  margin:0;
+  background: var(--bg);
+  color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+h1,h2,h3,.brand,.nav-item span.label,.section-title,.fab,.stat-num{font-family:'Baloo 2',system-ui,sans-serif;}
+button{font-family:inherit;}
+::selection{background: var(--flame1); color:#170D06;}
+
+/* ---------- Topbar ---------- */
+.topbar{
+  position:fixed; top:0; left:0; right:0; height:var(--topbar-h);
+  display:flex; align-items:center; gap:12px;
+  padding:0 14px;
+  background:#FFFFFF;
+  border-bottom: 2px solid transparent;
+  border-image: linear-gradient(90deg, var(--red-deep), var(--flame1), var(--gold), var(--flame1), var(--red-deep)) 1;
+  box-shadow: var(--shadow);
+  z-index:60;
+}
+.icon-btn{
+  width:40px;height:40px;border-radius:12px;border:1px solid var(--line);
+  background:var(--input-bg); color:var(--red);
+  display:flex; align-items:center; justify-content:center; font-size:19px;
+  cursor:pointer; flex:none; transition:.15s ease;
+}
+.icon-btn:active{transform:scale(0.92); background:var(--line);}
+.brand-wrap{display:flex; align-items:center; gap:10px; flex:1; min-width:0;}
+.brand-logo{
+  width:38px;height:38px;border-radius:50%;
+  border:2px solid var(--gold); object-fit:cover; flex:none;
+  box-shadow:0 0 0 3px rgba(244,180,0,0.12);
+}
+.brand-text{display:flex; flex-direction:column; min-width:0; line-height:1.05;}
+.brand{
+  font-weight:800; font-size:17px; letter-spacing:0.2px;
+  color: var(--red-deep);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.brand-sub{font-size:10.5px; color:var(--text-dim); letter-spacing:1.2px; text-transform:uppercase; font-weight:600;}
+
+/* ---------- Search bar ---------- */
+.searchbar{
+  position:fixed; top:var(--topbar-h); left:0; right:0; z-index:55;
+  background:#FFFFFF; border-bottom:1px solid var(--line);
+  padding:10px 14px; display:none; gap:8px;
+  transform:translateY(-8px); opacity:0; transition:.18s ease;
+}
+.searchbar.open{display:flex; transform:translateY(0); opacity:1;}
+.searchbar input{
+  flex:1; background:var(--input-bg); border:1px solid var(--line); color:var(--text);
+  border-radius:10px; padding:10px 12px; font-size:14px; outline:none;
+}
+.searchbar input:focus{border-color:var(--flame1);}
+.searchbar button{background:transparent;border:none;color:var(--text-dim);font-size:13px;cursor:pointer; padding:0 4px;}
+
+/* ---------- Drawer ---------- */
+.backdrop{
+  position:fixed; inset:0; background:rgba(0,0,0,0.55); backdrop-filter: blur(2px);
+  z-index:70; opacity:0; pointer-events:none; transition:.2s ease;
+}
+.backdrop.open{opacity:1; pointer-events:auto;}
+.drawer{
+  position:fixed; top:0; bottom:0; left:0; width:82%; max-width:300px; z-index:80;
+  background: #FFFFFF;
+  border-right:1px solid var(--line-strong);
+  transform:translateX(-105%); transition:.25s cubic-bezier(.4,0,.2,1);
+  display:flex; flex-direction:column; box-shadow: 20px 0 40px rgba(43,24,16,0.10);
+}
+.drawer.open{transform:translateX(0);}
+.drawer-head{
+  padding:22px 18px 16px; display:flex; align-items:center; gap:12px;
+  border-bottom:1px solid var(--line);
+  background: radial-gradient(180px 90px at 20% 0%, rgba(255,122,0,0.10), transparent 70%);
+}
+.drawer-head img{width:52px;height:52px;border-radius:50%; border:2px solid var(--gold); object-fit:cover;}
+.drawer-head .brand{font-size:19px; color:var(--red-deep);}
+.drawer-nav{flex:1; overflow-y:auto; padding:10px 10px 20px;}
+.nav-item{
+  display:flex; align-items:center; gap:12px; padding:12px 12px; border-radius:12px;
+  color:var(--text-dim); cursor:pointer; margin-bottom:2px; border:1px solid transparent;
+  font-weight:600; font-size:14.5px; transition:.12s ease;
+}
+.nav-item .ic{width:22px; text-align:center; font-size:17px; flex:none;}
+.nav-item:active{background:var(--input-bg);}
+.nav-item.active{
+  color:var(--red-deep); background:linear-gradient(90deg, rgba(255,122,0,0.14), rgba(255,122,0,0.02));
+  border-color: rgba(255,122,0,0.25);
+}
+.nav-divider{height:1px; background:var(--line); margin:10px 4px;}
+.drawer-foot{padding:14px 18px; font-size:11px; color:var(--text-dimmer); border-top:1px solid var(--line);}
+
+/* ---------- Main ---------- */
+.app-main{
+  padding-top:calc(var(--topbar-h) + 14px);
+  padding-bottom:100px;
+  max-width:720px; margin:0 auto; padding-left:14px; padding-right:14px;
+}
+.app-main.search-open{padding-top:calc(var(--topbar-h) + 58px);}
+.section-title{
+  font-size:21px; font-weight:800; margin:4px 0 4px; color:var(--cream);
+  display:flex; align-items:center; gap:8px;
+}
+.section-sub{font-size:13px; color:var(--text-dim); margin:0 0 16px;}
+
+/* ---------- Cards / grid ---------- */
+.stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px;}
+.stat-card{
+  background:var(--card);
+  border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px; position:relative; overflow:hidden;
+  box-shadow: var(--shadow);
+}
+.stat-card.wide{grid-column:1 / -1;}
+.stat-card::after{
+  content:""; position:absolute; right:-20px; top:-20px; width:80px; height:80px; border-radius:50%;
+  background:radial-gradient(circle, rgba(255,122,0,0.08), transparent 70%);
+}
+.stat-label{font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--text-dim); font-weight:700;}
+.stat-num{font-size:23px; font-weight:800; margin-top:4px; color:var(--cream);}
+.stat-num.flame{color: var(--flame1);}
+.stat-num.danger{color:var(--danger);}
+.stat-num.pos{color:var(--success);}
+.stat-num.neg{color:var(--danger);}
+.flow-breakdown{display:flex; gap:14px; margin-top:6px; font-size:12px; color:var(--text-dim); font-weight:600;}
+.flow-breakdown b{color:var(--cream); font-weight:800;}
+
+.brand-hero{
+  display:flex; align-items:center; gap:14px; margin-bottom:18px; padding:14px;
+  background:linear-gradient(120deg, #FFF6E4, #FFFFFF 65%);
+  border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+}
+.brand-hero img{width:58px; height:58px; border-radius:50%; border:2px solid var(--gold); object-fit:cover; flex:none;}
+.brand-hero .htxt{min-width:0;}
+.brand-hero .htxt .hname{font-family:'Baloo 2',sans-serif; font-weight:800; font-size:17px; color:var(--red-deep); line-height:1.15;}
+.brand-hero .htxt .htag{font-size:11.5px; color:var(--text-dim); margin-top:2px; line-height:1.3;}
+.stat-foot{font-size:11.5px; color:var(--text-dimmer); margin-top:2px;}
+
+.flamebar-track{height:8px; border-radius:6px; background:var(--input-bg); overflow:hidden; margin-top:10px;}
+.flamebar-fill{height:100%; border-radius:6px; background:linear-gradient(90deg, var(--red), var(--flame1), var(--gold)); transition:width .4s ease;}
+
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  padding:14px; margin-bottom:10px; position:relative;
+  box-shadow: var(--shadow);
+}
+.card-row{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+.pay-name{font-weight:700; font-size:15px; color:var(--cream);}
+.pay-meta{font-size:12px; color:var(--text-dim); margin-top:3px; display:flex; gap:6px; flex-wrap:wrap; align-items:center;}
+.pay-amount{font-weight:800; font-size:16px; color:var(--gold-light); white-space:nowrap;}
+.chip{
+  display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700;
+  padding:3px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:.4px;
+}
+.chip.freq{background:var(--input-bg); color:var(--text-dim);}
+.chip.paid{background:var(--success-bg); color:var(--success);}
+.chip.overdue{background:var(--danger-bg); color:var(--danger);}
+.chip.today{background:var(--warning-bg); color:var(--warning);}
+.chip.upcoming{background:rgba(255,122,0,0.12); color:var(--flame2);}
+.card-actions{display:flex; gap:8px; margin-top:12px;}
+.btn{
+  border:none; border-radius:10px; padding:9px 13px; font-size:13px; font-weight:700; cursor:pointer;
+  display:inline-flex; align-items:center; gap:6px; transition:.12s ease; justify-content:center;
+}
+.btn:active{transform:scale(0.96);}
+.btn-primary{background:linear-gradient(90deg, var(--red), var(--flame1)); color:#fff; box-shadow:0 4px 14px rgba(255,90,0,0.25);}
+.btn-ghost{background:var(--input-bg); color:var(--text-dim); border:1px solid var(--line);}
+.btn-danger{background:var(--danger-bg); color:var(--danger);}
+.btn-success{background:var(--success-bg); color:var(--success);}
+.btn-block{width:100%;}
+.btn-sm{padding:7px 10px; font-size:12px;}
+
+.empty-state{text-align:center; padding:50px 18px; color:var(--text-dim);}
+.empty-state .emoji{font-size:42px; display:block; margin-bottom:10px;}
+.empty-state h3{color:var(--cream); margin:0 0 6px;}
+.empty-state p{font-size:13px; margin:0 0 16px;}
+
+/* ---------- Calendar ---------- */
+.cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+.cal-head .month-label{font-weight:800; font-size:17px; color:var(--cream);}
+.cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
+.cal-dow{text-align:center; font-size:10.5px; color:var(--text-dimmer); font-weight:700; padding-bottom:4px;}
+.cal-day{
+  aspect-ratio:1; border-radius:10px; background:var(--card); border:1px solid var(--line);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;
+  font-size:12.5px; color:var(--text-dim); cursor:pointer;
+}
+.cal-day.muted{opacity:0.28; pointer-events:none;}
+.cal-day.today{border-color:var(--gold); color:var(--gold-light); font-weight:800;}
+.cal-day.selected{background:linear-gradient(160deg, rgba(255,122,0,0.28), rgba(255,122,0,0.08)); border-color:var(--flame1);}
+.cal-dot{width:5px; height:5px; border-radius:50%; background:var(--flame1); position:absolute; bottom:5px;}
+.cal-dot.overdue-dot{background:var(--danger);}
+.cal-list-title{margin:18px 0 8px; font-weight:700; color:var(--cream); font-size:14px;}
+
+/* ---------- Reports ---------- */
+.bar-row{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+.bar-label{width:92px; font-size:12px; color:var(--text-dim); flex:none;}
+.bar-track{flex:1; height:14px; background:var(--input-bg); border-radius:8px; overflow:hidden;}
+.bar-fill{height:100%; border-radius:8px; background:linear-gradient(90deg, var(--flame1), var(--gold));}
+.bar-val{width:80px; text-align:right; font-size:12px; font-weight:700; color:var(--gold-light); flex:none;}
+.donut-wrap{display:flex; align-items:center; gap:18px; margin:6px 0 18px;}
+.donut{width:110px; height:110px; border-radius:50%; flex:none; position:relative;}
+.donut-center{position:absolute; inset:14px; border-radius:50%; background:var(--bg-soft); display:flex; align-items:center; justify-content:center; flex-direction:column;}
+.donut-center b{font-size:16px; color:var(--cream);}
+.donut-center span{font-size:9.5px; color:var(--text-dim); text-transform:uppercase;}
+.legend{display:flex; flex-direction:column; gap:8px; font-size:12.5px;}
+.legend .dot{width:9px;height:9px;border-radius:50%; display:inline-block; margin-right:6px;}
+
+/* ---------- Modal ---------- */
+.modal-backdrop{
+  position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:90; display:none;
+  align-items:flex-end; justify-content:center;
+}
+.modal-backdrop.open{display:flex;}
+.modal{
+  width:100%; max-width:520px; max-height:92vh; overflow-y:auto;
+  background:#FFFFFF;
+  border:1px solid var(--line-strong); border-bottom:none;
+  border-radius:22px 22px 0 0; padding:18px 18px 26px;
+  animation: slideUp .22s ease;
+  box-shadow: 0 -10px 30px rgba(43,24,16,0.12);
+}
+@keyframes slideUp{from{transform:translateY(30px); opacity:0;} to{transform:translateY(0); opacity:1;}}
+.modal-handle{width:40px; height:4px; background:var(--line-strong); border-radius:3px; margin:0 auto 14px;}
+.modal-title{font-size:18px; font-weight:800; color:var(--cream); margin-bottom:14px; display:flex; align-items:center; justify-content:space-between;}
+.field{margin-bottom:13px;}
+.field label{display:block; font-size:12px; font-weight:700; color:var(--text-dim); margin-bottom:6px; text-transform:uppercase; letter-spacing:.4px;}
+.field input, .field select, .field textarea{
+  width:100%; background:var(--input-bg); border:1px solid var(--line); color:var(--text);
+  border-radius:10px; padding:11px 12px; font-size:14.5px; outline:none; font-family:inherit;
+}
+.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--flame1);}
+.field textarea{resize:vertical; min-height:60px;}
+.amount-input-wrap{position:relative;}
+.amount-input-wrap .cur{position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-dim); font-weight:700; font-size:13px;}
+.amount-input-wrap input{padding-left:46px;}
+.chip-toggle-row{display:flex; gap:8px; flex-wrap:wrap;}
+.chip-toggle{
+  padding:8px 13px; border-radius:20px; border:1px solid var(--line); background:var(--input-bg);
+  color:var(--text-dim); font-size:12.5px; font-weight:700; cursor:pointer;
+}
+.chip-toggle.active{background:linear-gradient(90deg, var(--red), var(--flame1)); color:#fff; border-color:transparent;}
+.modal-actions{display:flex; gap:10px; margin-top:18px;}
+
+/* ---------- FAB ---------- */
+.fab{
+  position:fixed; right:18px; bottom:24px; z-index:50;
+  width:58px; height:58px; border-radius:50%; border:none; cursor:pointer;
+  background:radial-gradient(circle at 35% 30%, var(--gold), var(--flame1) 55%, var(--red-deep));
+  color:#170D06; font-size:28px; font-weight:800; display:flex; align-items:center; justify-content:center;
+  box-shadow: 0 8px 24px rgba(255,110,0,0.45), 0 0 0 6px rgba(255,122,0,0.08);
+  transition:.15s ease;
+}
+.fab:active{transform:scale(0.92);}
+
+/* ---------- Toast ---------- */
+.toast-wrap{position:fixed; bottom:96px; left:0; right:0; display:flex; flex-direction:column; align-items:center; gap:8px; z-index:100; pointer-events:none;}
+.toast{
+  background:#2B1810; border:1px solid var(--gold); color:#FFF3DF; padding:10px 18px;
+  border-radius:30px; font-size:13px; font-weight:600; box-shadow: 0 6px 20px rgba(43,24,16,0.25);
+  opacity:0; transform:translateY(10px); transition:.25s ease;
+}
+.toast.show{opacity:1; transform:translateY(0);}
+
+/* ---------- Install banner ---------- */
+.install-banner{
+  position:fixed; left:12px; right:12px; bottom:96px; z-index:45;
+  background:#FFFFFF; border:1px solid var(--gold);
+  border-radius:14px; padding:12px 14px; display:none; align-items:center; gap:10px;
+  box-shadow: 0 8px 24px rgba(43,24,16,0.14);
+}
+.install-banner.show{display:flex;}
+.install-banner .txt{flex:1; font-size:12.5px; color:var(--text-dim);}
+.install-banner .txt b{color:var(--cream); display:block; font-size:13.5px;}
+
+/* ---------- Reminders ---------- */
+.reminder-row{display:flex; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line);}
+.reminder-row:last-child{border-bottom:none;}
+.reminder-icon{width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; flex:none;}
+
+/* ---------- Settings ---------- */
+.settings-group{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:6px 4px; margin-bottom:16px;}
+.settings-row{display:flex; align-items:center; justify-content:space-between; padding:12px 12px; border-bottom:1px solid var(--line);}
+.settings-row:last-child{border-bottom:none;}
+.settings-row .lbl{font-size:14px; font-weight:600; color:var(--cream);}
+.settings-row .sub{font-size:11.5px; color:var(--text-dim); margin-top:2px;}
+.switch{width:44px; height:26px; border-radius:20px; background:var(--input-bg); position:relative; cursor:pointer; border:1px solid var(--line); flex:none;}
+.switch.on{background:linear-gradient(90deg, var(--red), var(--flame1)); border-color:transparent;}
+.switch .knob{position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:#fff; transition:.15s ease;}
+.switch.on .knob{left:20px;}
+.settings-group input[type=text], .settings-group select{
+  background:var(--input-bg); border:1px solid var(--line); color:var(--text); border-radius:8px; padding:7px 10px; font-size:13px; width:150px; text-align:right;
+}
+
+/* scrollbar */
+::-webkit-scrollbar{width:8px; height:8px;}
+::-webkit-scrollbar-thumb{background:rgba(255,122,0,0.25); border-radius:8px;}
+
+@media (min-width:760px){
+  .drawer{width:300px;}
+  .app-main{padding-left:20px; padding-right:20px;}
+}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <button class="icon-btn" id="btnMenu" aria-label="Menu">☰</button>
+  <div class="brand-wrap">
+    <img class="brand-logo" src="icon-96.png" alt="El Sabroso logo">
+    <div class="brand-text">
+      <span class="brand">El Sabroso</span>
+      <span class="brand-sub" id="brandSub">Payment Schedule</span>
+    </div>
+  </div>
+  <button class="icon-btn" id="btnSearch" aria-label="Search">🔎</button>
+</div>
+
+<!-- Search bar -->
+<div class="searchbar" id="searchbar">
+  <input type="text" id="searchInput" placeholder="Search payments or categories…">
+  <button id="btnSearchClose">Close</button>
+</div>
+
+<!-- Drawer -->
+<div class="backdrop" id="backdrop"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <img src="icon-96.png" alt="logo">
+    <div>
+      <div class="brand">El Sabroso</div>
+      <div class="brand-sub">Lechon Manok</div>
+    </div>
+  </div>
+  <div class="drawer-nav" id="drawerNav">
+    <div class="nav-item" data-view="dashboard"><span class="ic">🏠</span><span class="label">Dashboard</span></div>
+    <div class="nav-item" data-view="cashin"><span class="ic">💵</span><span class="label">Cash In</span></div>
+    <div class="nav-item" data-view="add"><span class="ic">➕</span><span class="label">Add Payment</span></div>
+    <div class="nav-divider"></div>
+    <div class="nav-item" data-view="daily"><span class="ic">☀️</span><span class="label">Daily Schedule</span></div>
+    <div class="nav-item" data-view="weekly"><span class="ic">📆</span><span class="label">Weekly Schedule</span></div>
+    <div class="nav-item" data-view="monthly"><span class="ic">🗓️</span><span class="label">Monthly Schedule</span></div>
+    <div class="nav-item" data-view="calendar"><span class="ic">📅</span><span class="label">Calendar</span></div>
+    <div class="nav-divider"></div>
+    <div class="nav-item" data-view="overdue"><span class="ic">🔴</span><span class="label">Overdue</span></div>
+    <div class="nav-item" data-view="paid"><span class="ic">✅</span><span class="label">Paid Payments</span></div>
+    <div class="nav-divider"></div>
+    <div class="nav-item" data-view="reports"><span class="ic">📊</span><span class="label">Reports</span></div>
+    <div class="nav-item" data-view="reminders"><span class="ic">🔔</span><span class="label">Reminders</span></div>
+    <div class="nav-item" data-view="settings"><span class="ic">⚙️</span><span class="label">Settings</span></div>
+  </div>
+  <div class="drawer-foot">🔥 Manok na malasa, Balot ng Init, Lechon Manok na malupit!</div>
+</div>
+
+<!-- Main -->
+<main class="app-main" id="appMain"></main>
+
+<!-- FAB -->
+<button class="fab" id="fabAdd" aria-label="Add payment">+</button>
+
+<!-- Install banner -->
+<div class="install-banner" id="installBanner">
+  <div class="txt"><b>Install this app</b>Add El Sabroso Pay to your home screen for quick access.</div>
+  <button class="btn btn-primary btn-sm" id="btnInstall">Install</button>
+  <button class="icon-btn btn-sm" id="btnInstallClose" style="width:32px;height:32px;font-size:14px;">✕</button>
+</div>
+
+<!-- Toasts -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- Payment Modal -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title"><span id="modalTitleTxt">Add Payment</span><span id="modalClose" style="cursor:pointer;color:var(--text-dim);font-size:20px;">✕</span></div>
+    <form id="paymentForm">
+      <input type="hidden" id="pId">
+      <div class="field">
+        <label>Payment Name</label>
+        <input type="text" id="pName" placeholder="e.g. Chicken Supplier" required>
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <select id="pCategory">
+          <option>Supplier</option>
+          <option>Rent</option>
+          <option>Utilities</option>
+          <option>Staff Salary</option>
+          <option>Loan / Finance</option>
+          <option>Marketing</option>
+          <option>Equipment</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Amount (₱)</label>
+        <div class="amount-input-wrap">
+          <span class="cur">₱</span>
+          <input type="number" id="pAmount" min="0" step="0.01" placeholder="0.00" required>
+        </div>
+      </div>
+      <div class="field">
+        <label>Frequency</label>
+        <select id="pFrequency">
+          <option value="once">One-time</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Due Date</label>
+        <input type="date" id="pDueDate" required>
+      </div>
+      <div class="field">
+        <label>Remind me before (days)</label>
+        <div class="chip-toggle-row" id="reminderChips">
+          <div class="chip-toggle" data-d="7">7d</div>
+          <div class="chip-toggle" data-d="3">3d</div>
+          <div class="chip-toggle" data-d="1">1d</div>
+          <div class="chip-toggle" data-d="0">Due day</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Notes</label>
+        <textarea id="pNotes" placeholder="Optional notes…"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger" id="btnDeletePayment" style="display:none;">Delete</button>
+        <button type="submit" class="btn btn-primary btn-block">Save Payment</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Cash In Modal -->
+<div class="modal-backdrop" id="cashInModalBackdrop">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title"><span id="cashInModalTitleTxt">Add Cash In</span><span id="cashInModalClose" style="cursor:pointer;color:var(--text-dim);font-size:20px;">✕</span></div>
+    <form id="cashInForm">
+      <input type="hidden" id="cId">
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="cDate" required>
+      </div>
+      <div class="field">
+        <label>Amount (₱)</label>
+        <div class="amount-input-wrap">
+          <span class="cur">₱</span>
+          <input type="number" id="cAmount" min="0" step="0.01" placeholder="0.00" required>
+        </div>
+      </div>
+      <div class="field">
+        <label>Source</label>
+        <select id="cSource">
+          <option>Walk-in Sales</option>
+          <option>Online Orders</option>
+          <option>Catering / Bulk Orders</option>
+          <option>Delivery Apps</option>
+          <option>Other Income</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Notes</label>
+        <textarea id="cNotes" placeholder="Optional notes…"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger" id="btnDeleteCashIn" style="display:none;">Delete</button>
+        <button type="submit" class="btn btn-primary btn-block">Save Cash In</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ===================== STORAGE ===================== */
+const STORAGE_KEY = 'elsabroso_pay_v1';
+
+/* ===================== FIREBASE SYNC ===================== */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC8gg59ESZP3mb4JLpfyPvGKCJhJ2S8-AA",
+  authDomain: "el-sabroso-df2b8.firebaseapp.com",
+  databaseURL: "https://el-sabroso-df2b8-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "el-sabroso-df2b8",
+  storageBucket: "el-sabroso-df2b8.firebasestorage.app",
+  messagingSenderId: "805921881933",
+  appId: "1:805921881933:web:7bf9637bf6b80f2aea8104",
+  measurementId: "G-4WMGSZVBTN"
+};
+const FIREBASE_PATH = 'elSabrosoPay';
+let fbDb = null, fbRef = null, fbConnected = false, fbBlocked = false, suppressRemoteWrite = false, firstSyncDone = false;
+
+function loadScript(src){
+  return new Promise((resolve, reject)=>{
+    const s = document.createElement('script');
+    s.src = src;
+    s.async = true;
+    s.onload = ()=>resolve();
+    s.onerror = ()=>reject(new Error('Failed to load '+src));
+    document.head.appendChild(s);
+  });
+}
+
+function initFirebase(){
+  // Load the SDK in the background so a slow/blocked CDN never delays the app itself.
+  Promise.race([
+    Promise.all([
+      loadScript('https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js'),
+      loadScript('https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js')
+    ]),
+    new Promise((_, reject)=> setTimeout(()=>reject(new Error('Firebase SDK load timed out')), 8000))
+  ]).then(startFirebase).catch((e)=>{
+    console.warn('Cloud sync unavailable:', e.message);
+    updateSyncBadge();
+  });
+}
+
+function startFirebase(){
+  if(typeof firebase === 'undefined'){ console.warn('Firebase SDK not loaded — running offline only.'); return; }
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    fbDb = firebase.database();
+    fbRef = fbDb.ref(FIREBASE_PATH);
+
+    fbDb.ref('.info/connected').on('value', (snap)=>{
+      fbConnected = snap.val()===true;
+      updateSyncBadge();
+    });
+
+    fbRef.on('value', (snap)=>{
+      fbBlocked = false;
+      const remote = snap.val();
+      if(remote && typeof remote==='object'){
+        suppressRemoteWrite = true;
+        DB = normalizeDB(remote);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+        render();
+        suppressRemoteWrite = false;
+        if(!firstSyncDone){ toast('☁️ Synced with cloud'); }
+      } else if(!firstSyncDone){
+        // nothing on the server yet — seed it with what's on this device
+        fbRef.set(DB).catch(()=>{});
+      }
+      firstSyncDone = true;
+      updateSyncBadge();
+    }, (err)=>{
+      console.error('Firebase sync error:', err);
+      fbBlocked = (err && err.code === 'PERMISSION_DENIED');
+      updateSyncBadge();
+      toast(fbBlocked ? '🔒 Cloud database is blocking access — check Rules' : '⚠️ Cloud sync unavailable — working offline');
+    });
+  }catch(e){
+    console.error('Firebase init failed:', e);
+  }
+}
+function updateSyncBadge(){
+  const el = document.getElementById('syncBadge');
+  if(!el) return;
+  if(fbBlocked){
+    el.textContent = '🔒 Blocked by Database Rules';
+    el.style.color = 'var(--danger)';
+  } else if(fbConnected){
+    el.textContent = '☁️ Synced';
+    el.style.color = 'var(--success)';
+  } else {
+    el.textContent = '⚠️ Offline';
+    el.style.color = 'var(--text-dimmer)';
+  }
+}
+
+const CATS = ['Supplier','Rent','Utilities','Staff Salary','Loan / Finance','Marketing','Equipment','Other'];
+
+function uid(){ return 'p_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function pad(n){ return n<10 ? '0'+n : ''+n; }
+function toISO(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function parseISO(s){ const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+function todayDate(){ const d=new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function todayISO(){ return toISO(todayDate()); }
+function addDays(iso, n){ const d=parseISO(iso); d.setDate(d.getDate()+n); return toISO(d); }
+function addMonthsISO(iso, n){ const d=parseISO(iso); d.setMonth(d.getMonth()+n); return toISO(d); }
+function daysDiff(iso){ const d=parseISO(iso); return Math.round((d - todayDate())/86400000); }
+function fmtMoney(n){ return '₱' + Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmtDateHuman(iso){ const d=parseISO(iso); return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function fmtDayLabel(iso){
+  const dd = daysDiff(iso);
+  if(dd===0) return 'Today';
+  if(dd===1) return 'Tomorrow';
+  if(dd===-1) return 'Yesterday';
+  if(dd<0) return Math.abs(dd)+'d overdue';
+  return 'in '+dd+'d';
+}
+
+const CASH_SOURCES = ['Walk-in Sales','Online Orders','Catering / Bulk Orders','Delivery Apps','Other Income'];
+
+function defaultData(){
+  const t = todayISO();
+  return {
+    settings:{ businessName:'El Sabroso Lechon Manok', defaultReminders:[3,1,0], notifEnabled:false },
+    payments:[
+      {id:uid(), name:'Chicken Supplier', category:'Supplier', amount:3500, frequency:'weekly', dueDate:addDays(t,2), notes:'Fresh whole chicken delivery', reminders:[3,1,0], status:'pending', history:[]},
+      {id:uid(), name:'Shop Rent — Al Quoz', category:'Rent', amount:8000, frequency:'monthly', dueDate:addDays(t,9), notes:'Monthly branch rent', reminders:[7,3,1], status:'pending', history:[]},
+      {id:uid(), name:'DEWA Electricity', category:'Utilities', amount:1240, frequency:'monthly', dueDate:addDays(t,-2), notes:'', reminders:[3,1,0], status:'pending', history:[]},
+      {id:uid(), name:'Staff Salaries', category:'Staff Salary', amount:12500, frequency:'monthly', dueDate:addDays(t,14), notes:'6 staff, end of month', reminders:[7,3,1], status:'pending', history:[]},
+      {id:uid(), name:'Gas Cylinder Refill', category:'Supplier', amount:450, frequency:'weekly', dueDate:t, notes:'Charcoal + gas', reminders:[1,0], status:'pending', history:[]},
+      {id:uid(), name:'Packaging Boxes', category:'Supplier', amount:600, frequency:'daily', dueDate:t, notes:'', reminders:[0], status:'pending', history:[]},
+      {id:uid(), name:'POS System Subscription', category:'Equipment', amount:299, frequency:'monthly', dueDate:addDays(t,-6), notes:'', reminders:[3,0], status:'pending', history:[]}
+    ],
+    cashIn:[
+      {id:uid(), date:addDays(t,-3), amount:9200, source:'Walk-in Sales', notes:''},
+      {id:uid(), date:addDays(t,-2), amount:7600, source:'Walk-in Sales', notes:''},
+      {id:uid(), date:addDays(t,-2), amount:1800, source:'Delivery Apps', notes:''},
+      {id:uid(), date:addDays(t,-1), amount:10450, source:'Walk-in Sales', notes:''},
+      {id:uid(), date:t, amount:6200, source:'Walk-in Sales', notes:'Morning sales so far'},
+      {id:uid(), date:t, amount:1500, source:'Online Orders', notes:''}
+    ]
+  };
+}
+
+let DB = load();
+function toArray(x){
+  if(Array.isArray(x)) return x;
+  if(x && typeof x==='object') return Object.values(x);
+  return [];
+}
+function normalizeDB(db){
+  if(!db || typeof db!=='object') db = {};
+  db.payments = toArray(db.payments);
+  db.cashIn = toArray(db.cashIn);
+  if(!db.settings || typeof db.settings!=='object') db.settings = {businessName:'El Sabroso Lechon Manok', defaultReminders:[3,1,0], notifEnabled:false};
+  db.settings.defaultReminders = toArray(db.settings.defaultReminders).length ? toArray(db.settings.defaultReminders) : [3,1,0];
+  db.payments.forEach(p=>{
+    // Firebase Realtime Database silently drops empty arrays on write, and can
+    // return sparse arrays as plain objects — always restore proper arrays.
+    p.history = toArray(p.history);
+    p.reminders = toArray(p.reminders);
+  });
+  return db;
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) { const d = defaultData(); localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); return d; }
+    const parsed = JSON.parse(raw);
+    return normalizeDB(parsed);
+  }catch(e){ return defaultData(); }
+}
+function save(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
+  if(fbRef && !suppressRemoteWrite){
+    fbRef.set(DB).catch((err)=>{
+      console.error('Firebase write failed:', err);
+      fbBlocked = (err && err.code === 'PERMISSION_DENIED');
+      updateSyncBadge();
+      toast(fbBlocked ? '🔒 Save blocked by Database Rules' : '⚠️ Could not sync to cloud');
+    });
+  }
+}
+
+/* ===================== STATE ===================== */
+let ui = { view:'dashboard', search:'', calMonth: new Date(), calSelected: todayISO() };
+
+
+/* ===================== STATUS LOGIC ===================== */
+function isOnceDone(p){ return p.frequency==='once' && p.status==='paid'; }
+function paymentStatus(p){
+  if(isOnceDone(p)) return 'paid';
+  const dd = daysDiff(p.dueDate);
+  if(dd < 0) return 'overdue';
+  if(dd === 0) return 'today';
+  return 'upcoming';
+}
+function statusChip(p){
+  const st = paymentStatus(p);
+  const map = { paid:['paid','✅ Paid'], overdue:['overdue','🔴 Overdue'], today:['today','🟠 Due Today'], upcoming:['upcoming','⏳ Upcoming'] };
+  return `<span class="chip ${map[st][0]}">${map[st][1]}</span>`;
+}
+
+function markPaid(id){
+  const p = DB.payments.find(x=>x.id===id);
+  if(!p) return;
+  p.history.push({date:p.dueDate, paidOn: todayISO(), amount:p.amount});
+  if(p.frequency==='once'){ p.status='paid'; }
+  else if(p.frequency==='daily'){ p.dueDate = addDays(p.dueDate,1); }
+  else if(p.frequency==='weekly'){ p.dueDate = addDays(p.dueDate,7); }
+  else if(p.frequency==='monthly'){ p.dueDate = addMonthsISO(p.dueDate,1); }
+  save();
+  toast('✅ Marked as paid — ' + p.name);
+  render();
+}
+function deletePayment(id){
+  const p = DB.payments.find(x=>x.id===id);
+  if(!p) return;
+  if(!confirm('Delete "'+p.name+'"? This cannot be undone.')) return;
+  DB.payments = DB.payments.filter(x=>x.id!==id);
+  save();
+  closeModal();
+  toast('🗑️ Payment deleted');
+  render();
+}
+
+/* ===================== FILTER HELPERS ===================== */
+function activePayments(){ return DB.payments.filter(p=>!isOnceDone(p)); }
+function searchFilter(list){
+  const q = ui.search.trim().toLowerCase();
+  if(!q) return list;
+  return list.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+}
+function sortByDue(list){ return [...list].sort((a,b)=> parseISO(a.dueDate)-parseISO(b.dueDate)); }
+
+function inThisWeek(iso){
+  const d = parseISO(iso), t = todayDate();
+  const day = t.getDay(); // 0 sun
+  const monOffset = (day===0? -6 : 1-day);
+  const start = new Date(t); start.setDate(t.getDate()+monOffset);
+  const end = new Date(start); end.setDate(start.getDate()+6);
+  return d>=start && d<=end;
+}
+function inThisMonth(iso){
+  const d = parseISO(iso), t = todayDate();
+  return d.getFullYear()===t.getFullYear() && d.getMonth()===t.getMonth();
+}
+
+/* ===================== CASH IN / CASH FLOW HELPERS ===================== */
+function cashInOn(iso){ return DB.cashIn.filter(c=>c.date===iso).reduce((s,c)=>s+Number(c.amount),0); }
+function cashOutDueOn(iso){ return activePayments().filter(p=>p.dueDate===iso).reduce((s,p)=>s+Number(p.amount),0); }
+function cashOutPaidOn(iso){
+  let sum = 0;
+  DB.payments.forEach(p=> p.history.forEach(h=>{ if(h.paidOn===iso) sum += Number(h.amount); }));
+  return sum;
+}
+function netFlowPlannedOn(iso){ return cashInOn(iso) - cashOutDueOn(iso); }
+function netFlowActualOn(iso){ return cashInOn(iso) - cashOutPaidOn(iso); }
+function sumCashIn(list){ return list.reduce((s,c)=>s+Number(c.amount),0); }
+function cashInSearchFilter(list){
+  const q = ui.search.trim().toLowerCase();
+  if(!q) return list;
+  return list.filter(c => c.source.toLowerCase().includes(q) || (c.notes||'').toLowerCase().includes(q));
+}
+function sortCashInDesc(list){ return [...list].sort((a,b)=> b.date.localeCompare(a.date) || (b.id>a.id?1:-1)); }
+
+function deleteCashInEntry(id){
+  const c = DB.cashIn.find(x=>x.id===id);
+  if(!c) return;
+  if(!confirm('Delete this ₱'+Number(c.amount).toLocaleString('en-PH')+' cash-in entry?')) return;
+  DB.cashIn = DB.cashIn.filter(x=>x.id!==id);
+  save();
+  closeCashInModal();
+  toast('🗑️ Cash-in entry deleted');
+  render();
+}
+
+/* ===================== RENDER ROOT ===================== */
+const $main = document.getElementById('appMain');
+const NAV_TITLES = {
+  dashboard:'Dashboard', cashin:'Cash In', add:'Add Payment', daily:'Daily Schedule', weekly:'Weekly Schedule',
+  monthly:'Monthly Schedule', calendar:'Calendar', overdue:'Overdue', paid:'Paid Payments',
+  reports:'Reports', reminders:'Reminders', settings:'Settings'
+};
+
+function render(){
+  document.querySelectorAll('.nav-item').forEach(el=>{
+    el.classList.toggle('active', el.dataset.view===ui.view);
+  });
+  document.getElementById('brandSub').textContent = NAV_TITLES[ui.view] || 'Payment Schedule';
+
+  if(ui.view==='dashboard') renderDashboard();
+  else if(ui.view==='cashin') renderCashIn();
+  else if(ui.view==='add') { openModal(); ui.view='dashboard'; renderDashboard(); }
+  else if(ui.view==='daily') renderSchedule('daily');
+  else if(ui.view==='weekly') renderSchedule('weekly');
+  else if(ui.view==='monthly') renderSchedule('monthly');
+  else if(ui.view==='calendar') renderCalendar();
+  else if(ui.view==='overdue') renderOverdue();
+  else if(ui.view==='paid') renderPaid();
+  else if(ui.view==='reports') renderReports();
+  else if(ui.view==='reminders') renderReminders();
+  else if(ui.view==='settings') renderSettings();
+}
+
+function paymentCard(p, opts){
+  opts = opts||{};
+  const st = paymentStatus(p);
+  return `
+  <div class="card" data-id="${p.id}">
+    <div class="card-row">
+      <div style="min-width:0;">
+        <div class="pay-name">${escapeHtml(p.name)}</div>
+        <div class="pay-meta">
+          <span class="chip freq">${p.frequency==='once'?'One-time':p.frequency}</span>
+          ${statusChip(p)}
+          <span>📅 ${fmtDateHuman(p.dueDate)} · ${fmtDayLabel(p.dueDate)}</span>
+        </div>
+        <div class="pay-meta" style="margin-top:4px;">🏷️ ${escapeHtml(p.category)}${p.notes? ' · '+escapeHtml(p.notes):''}</div>
+      </div>
+      <div class="pay-amount">${fmtMoney(p.amount)}</div>
+    </div>
+    ${opts.noActions ? '' : `
+    <div class="card-actions">
+      ${st!=='paid' ? `<button class="btn btn-success btn-sm" data-action="pay" data-id="${p.id}">✅ Mark Paid</button>` : ''}
+      <button class="btn btn-ghost btn-sm" data-action="edit" data-id="${p.id}">✏️ Edit</button>
+      <button class="btn btn-danger btn-sm" data-action="delete" data-id="${p.id}">🗑️</button>
+    </div>`}
+  </div>`;
+}
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function emptyState(emoji, title, sub){
+  return `<div class="empty-state"><span class="emoji">${emoji}</span><h3>${title}</h3><p>${sub}</p></div>`;
+}
+
+/* ===================== DASHBOARD ===================== */
+function renderDashboard(){
+  const list = activePayments();
+  const overdue = list.filter(p=>paymentStatus(p)==='overdue');
+  const dueToday = list.filter(p=>paymentStatus(p)==='today');
+  const weekTotal = list.filter(p=>inThisWeek(p.dueDate)).reduce((s,p)=>s+Number(p.amount),0);
+  const monthTotal = list.filter(p=>inThisMonth(p.dueDate)).reduce((s,p)=>s+Number(p.amount),0);
+  const overdueTotal = overdue.reduce((s,p)=>s+Number(p.amount),0);
+
+  const now = new Date();
+  const monthPaidTotal = DB.payments.reduce((s,p)=> s + p.history.filter(h=> h.paidOn && h.paidOn.slice(0,7)===toISO(now).slice(0,7)).reduce((a,h)=>a+Number(h.amount),0), 0);
+  const monthDenom = monthPaidTotal + monthTotal;
+  const pct = monthDenom>0 ? Math.min(100, Math.round(monthPaidTotal/monthDenom*100)) : 0;
+
+  const upcoming = sortByDue(list).slice(0,5);
+
+  const cashInToday = cashInOn(todayISO());
+  const cashOutToday = cashOutDueOn(todayISO());
+  const netToday = cashInToday - cashOutToday;
+  const netClass = netToday>=0 ? 'pos' : 'neg';
+  const netSign = netToday>=0 ? '+' : '−';
+
+  $main.innerHTML = `
+    <div class="brand-hero">
+      <img src="icon-192.png" alt="El Sabroso logo">
+      <div class="htxt">
+        <div class="hname">El Sabroso Lechon Manok</div>
+        <div class="htag">Manok na malasa, Balot ng Init, Lechon Manok na malupit! 🔥</div>
+      </div>
+    </div>
+
+    <div class="section-title">👋 Kumusta, Boss!</div>
+    <div class="section-sub">Here's your cash overview for today, ${fmtDateHuman(todayISO())}.</div>
+
+    <div class="stat-grid">
+      <div class="stat-card wide">
+        <div class="stat-label">Net Cash Flow — Today</div>
+        <div class="stat-num ${netClass}">${netSign} ${fmtMoney(Math.abs(netToday))}</div>
+        <div class="flow-breakdown">
+          <span>💵 Cash In: <b>${fmtMoney(cashInToday)}</b></span>
+          <span>💸 Cash Out: <b>${fmtMoney(cashOutToday)}</b></span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Due Today</div>
+        <div class="stat-num">${dueToday.length}</div>
+        <div class="stat-foot">${fmtMoney(dueToday.reduce((s,p)=>s+Number(p.amount),0))}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Overdue</div>
+        <div class="stat-num danger">${overdue.length}</div>
+        <div class="stat-foot">${fmtMoney(overdueTotal)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">This Week</div>
+        <div class="stat-num flame">${fmtMoney(weekTotal)}</div>
+        <div class="stat-foot">cash requirement</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">This Month</div>
+        <div class="stat-num flame">${fmtMoney(monthTotal)}</div>
+        <div class="stat-foot">cash requirement</div>
+      </div>
+      <div class="stat-card wide">
+        <div class="stat-label">Month Paid Progress</div>
+        <div class="flamebar-track"><div class="flamebar-fill" style="width:${pct}%"></div></div>
+        <div class="stat-foot">${pct}% of this month's cash requirement settled</div>
+      </div>
+    </div>
+
+    <div class="section-title" style="font-size:16px;">⏳ Upcoming Payments</div>
+    <div id="upcomingList">
+      ${upcoming.length? upcoming.map(p=>paymentCard(p)).join('') : emptyState('🎉','All caught up','No pending payments right now.')}
+    </div>
+  `;
+  bindCardActions();
+}
+
+/* ===================== DAILY / WEEKLY / MONTHLY ===================== */
+function renderSchedule(kind){
+  let list = activePayments();
+  if(kind==='daily') list = list.filter(p=> p.dueDate===todayISO());
+  if(kind==='weekly') list = list.filter(p=> inThisWeek(p.dueDate));
+  if(kind==='monthly') list = list.filter(p=> inThisMonth(p.dueDate));
+  list = sortByDue(searchFilter(list));
+  const total = list.reduce((s,p)=>s+Number(p.amount),0);
+  const titleMap = {daily:['☀️ Daily Schedule','Payments due today'], weekly:['📆 Weekly Schedule','Payments due this week (Mon–Sun)'], monthly:['🗓️ Monthly Schedule','Payments due this calendar month']};
+
+  let flowBlock = '';
+  if(kind==='daily'){
+    const cIn = cashInOn(todayISO());
+    const net = cIn - total;
+    const netClass = net>=0 ? 'pos' : 'neg';
+    const netSign = net>=0 ? '+' : '−';
+    flowBlock = `
+    <div class="stat-grid" style="margin-bottom:4px;">
+      <div class="stat-card">
+        <div class="stat-label">💵 Cash In Today</div>
+        <div class="stat-num pos">${fmtMoney(cIn)}</div>
+        <div class="stat-foot">logged so far today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">💸 Cash Out Today</div>
+        <div class="stat-num flame">${fmtMoney(total)}</div>
+        <div class="stat-foot">${list.length} payment${list.length===1?'':'s'} due</div>
+      </div>
+      <div class="stat-card wide">
+        <div class="stat-label">Net Cash Flow — Today</div>
+        <div class="stat-num ${netClass}">${netSign} ${fmtMoney(Math.abs(net))}</div>
+        <div class="stat-foot">cash in minus cash out due today</div>
+      </div>
+    </div>`;
+  } else {
+    flowBlock = `
+    <div class="stat-card wide" style="margin-bottom:16px;">
+      <div class="stat-label">Cash Requirement</div>
+      <div class="stat-num flame">${fmtMoney(total)}</div>
+      <div class="stat-foot">${list.length} payment${list.length===1?'':'s'}</div>
+    </div>`;
+  }
+
+  $main.innerHTML = `
+    <div class="section-title">${titleMap[kind][0]}</div>
+    <div class="section-sub">${titleMap[kind][1]}</div>
+    ${flowBlock}
+    <div>${list.length? list.map(p=>paymentCard(p)).join('') : emptyState('🍗','Nothing scheduled','No payments found for this period.')}</div>
+  `;
+  bindCardActions();
+}
+
+/* ===================== CASH IN ===================== */
+function cashInCard(c){
+  return `
+  <div class="card" data-id="${c.id}">
+    <div class="card-row">
+      <div style="min-width:0;">
+        <div class="pay-name">${escapeHtml(c.source)}</div>
+        <div class="pay-meta">
+          <span>📅 ${fmtDateHuman(c.date)} · ${fmtDayLabel(c.date)}</span>
+        </div>
+        ${c.notes? `<div class="pay-meta" style="margin-top:4px;">📝 ${escapeHtml(c.notes)}</div>` : ''}
+      </div>
+      <div class="pay-amount" style="color:var(--success);">+ ${fmtMoney(c.amount)}</div>
+    </div>
+    <div class="card-actions">
+      <button class="btn btn-ghost btn-sm" data-action="editcashin" data-id="${c.id}">✏️ Edit</button>
+      <button class="btn btn-danger btn-sm" data-action="deletecashin" data-id="${c.id}">🗑️</button>
+    </div>
+  </div>`;
+}
+
+function renderCashIn(){
+  const t = todayISO();
+  const todayList = DB.cashIn.filter(c=>c.date===t);
+  const weekList = DB.cashIn.filter(c=>inThisWeek(c.date));
+  const monthList = DB.cashIn.filter(c=>inThisMonth(c.date));
+  const list = sortCashInDesc(cashInSearchFilter(DB.cashIn));
+
+  $main.innerHTML = `
+    <div class="section-title">💵 Cash In</div>
+    <div class="section-sub">Log your daily sales and income to track real cash flow.</div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Today</div>
+        <div class="stat-num pos">${fmtMoney(sumCashIn(todayList))}</div>
+        <div class="stat-foot">${todayList.length} entr${todayList.length===1?'y':'ies'}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">This Week</div>
+        <div class="stat-num pos">${fmtMoney(sumCashIn(weekList))}</div>
+        <div class="stat-foot">${weekList.length} entr${weekList.length===1?'y':'ies'}</div>
+      </div>
+      <div class="stat-card wide">
+        <div class="stat-label">This Month</div>
+        <div class="stat-num pos">${fmtMoney(sumCashIn(monthList))}</div>
+        <div class="stat-foot">${monthList.length} entr${monthList.length===1?'y':'ies'}</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-block" id="btnAddCashIn" style="margin-bottom:16px;">➕ Add Cash In</button>
+
+    <div class="section-title" style="font-size:16px;">🧾 All Entries</div>
+    <div>${list.length? list.map(cashInCard).join('') : emptyState('💵','No cash-in logged yet','Tap "Add Cash In" to record your first sale.')}</div>
+  `;
+  document.getElementById('btnAddCashIn').addEventListener('click', ()=>openCashInModal());
+  bindCardActions();
+}
+
+/* ===================== OVERDUE ===================== */
+function renderOverdue(){
+  let list = activePayments().filter(p=>paymentStatus(p)==='overdue');
+  list = sortByDue(searchFilter(list));
+  const total = list.reduce((s,p)=>s+Number(p.amount),0);
+  $main.innerHTML = `
+    <div class="section-title">🔴 Overdue Payments</div>
+    <div class="section-sub">Settle these as soon as possible.</div>
+    <div class="stat-card wide" style="margin-bottom:16px; border-color:rgba(229,72,77,0.4);">
+      <div class="stat-label">Total Overdue</div>
+      <div class="stat-num danger">${fmtMoney(total)}</div>
+      <div class="stat-foot">${list.length} payment${list.length===1?'':'s'}</div>
+    </div>
+    <div>${list.length? list.map(p=>paymentCard(p)).join('') : emptyState('✨','No overdue payments','Great job staying on top of things!')}</div>
+  `;
+  bindCardActions();
+}
+
+/* ===================== PAID ===================== */
+function renderPaid(){
+  let entries = [];
+  DB.payments.forEach(p=>{
+    p.history.forEach(h=> entries.push({p, h}));
+  });
+  entries.sort((a,b)=> (b.h.paidOn||'').localeCompare(a.h.paidOn||''));
+  const q = ui.search.trim().toLowerCase();
+  if(q) entries = entries.filter(e=> e.p.name.toLowerCase().includes(q) || e.p.category.toLowerCase().includes(q));
+  const total = entries.reduce((s,e)=>s+Number(e.h.amount),0);
+
+  $main.innerHTML = `
+    <div class="section-title">✅ Paid Payments</div>
+    <div class="section-sub">Full history of settled payments.</div>
+    <div class="stat-card wide" style="margin-bottom:16px; border-color:rgba(76,175,109,0.4);">
+      <div class="stat-label">Total Paid (all time)</div>
+      <div class="stat-num" style="color:var(--success);">${fmtMoney(total)}</div>
+      <div class="stat-foot">${entries.length} record${entries.length===1?'':'s'}</div>
+    </div>
+    <div>${entries.length? entries.map(e=>`
+      <div class="card">
+        <div class="card-row">
+          <div>
+            <div class="pay-name">${escapeHtml(e.p.name)}</div>
+            <div class="pay-meta"><span class="chip paid">✅ Paid</span><span>🏷️ ${escapeHtml(e.p.category)}</span></div>
+            <div class="pay-meta" style="margin-top:4px;">Due ${fmtDateHuman(e.h.date)} · Paid on ${fmtDateHuman(e.h.paidOn)}</div>
+          </div>
+          <div class="pay-amount">${fmtMoney(e.h.amount)}</div>
+        </div>
+      </div>`).join('') : emptyState('🧾','No paid records yet','Mark a payment as paid to see it here.')}</div>
+  `;
+}
+
+/* ===================== CALENDAR ===================== */
+function renderCalendar(){
+  const y = ui.calMonth.getFullYear(), m = ui.calMonth.getMonth();
+  const first = new Date(y,m,1);
+  const startOffset = (first.getDay()+6)%7; // Monday-first
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const prevDays = new Date(y,m,0).getDate();
+
+  const dueMap = {};
+  activePayments().forEach(p=>{
+    dueMap[p.dueDate] = dueMap[p.dueDate] || [];
+    dueMap[p.dueDate].push(p);
+  });
+
+  let cells = '';
+  const dows = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+  dows.forEach(d=> cells += `<div class="cal-dow">${d}</div>`);
+
+  const totalCells = Math.ceil((startOffset+daysInMonth)/7)*7;
+  for(let i=0;i<totalCells;i++){
+    const dayNum = i - startOffset + 1;
+    let cellDate, muted=false;
+    if(dayNum<1){ cellDate = new Date(y,m-1, prevDays+dayNum); muted=true; }
+    else if(dayNum>daysInMonth){ cellDate = new Date(y,m+1, dayNum-daysInMonth); muted=true; }
+    else { cellDate = new Date(y,m,dayNum); }
+    const iso = toISO(cellDate);
+    const isToday = iso===todayISO();
+    const isSel = iso===ui.calSelected;
+    const dayItems = dueMap[iso]||[];
+    const hasOverdue = dayItems.some(p=>paymentStatus(p)==='overdue');
+    cells += `<div class="cal-day ${muted?'muted':''} ${isToday?'today':''} ${isSel?'selected':''}" data-iso="${iso}">
+      ${cellDate.getDate()}
+      ${dayItems.length? `<span class="cal-dot ${hasOverdue?'overdue-dot':''}"></span>`:''}
+    </div>`;
+  }
+
+  const selItems = sortByDue(dueMap[ui.calSelected]||[]);
+  const monthLabel = ui.calMonth.toLocaleDateString('en-GB',{month:'long', year:'numeric'});
+
+  $main.innerHTML = `
+    <div class="section-title">📅 Calendar</div>
+    <div class="section-sub">Tap a day to see what's due.</div>
+    <div class="cal-head">
+      <button class="icon-btn" id="calPrev">‹</button>
+      <div class="month-label">${monthLabel}</div>
+      <button class="icon-btn" id="calNext">›</button>
+    </div>
+    <div class="cal-grid">${cells}</div>
+    <div class="cal-list-title">${fmtDateHuman(ui.calSelected)} ${ui.calSelected===todayISO()?'(Today)':''}</div>
+    <div>${selItems.length? selItems.map(p=>paymentCard(p)).join('') : emptyState('📭','Nothing due','No payments scheduled this day.')}</div>
+  `;
+  document.getElementById('calPrev').onclick = ()=>{ ui.calMonth = new Date(y,m-1,1); renderCalendar(); };
+  document.getElementById('calNext').onclick = ()=>{ ui.calMonth = new Date(y,m+1,1); renderCalendar(); };
+  document.querySelectorAll('.cal-day[data-iso]').forEach(el=>{
+    el.addEventListener('click', ()=>{ ui.calSelected = el.dataset.iso; renderCalendar(); });
+  });
+  bindCardActions();
+}
+
+/* ===================== REPORTS ===================== */
+function renderReports(){
+  const list = activePayments();
+  const byCat = {};
+  list.forEach(p=>{ byCat[p.category] = (byCat[p.category]||0) + Number(p.amount); });
+  const maxCat = Math.max(1, ...Object.values(byCat));
+
+  // next 4 weeks cash requirement
+  const t = todayDate();
+  const weeks = [0,1,2,3].map(w=>{
+    const start = new Date(t); start.setDate(t.getDate() + w*7 - t.getDay() + 1);
+    const end = new Date(start); end.setDate(start.getDate()+6);
+    const sum = list.filter(p=>{ const d=parseISO(p.dueDate); return d>=start && d<=end; }).reduce((s,p)=>s+Number(p.amount),0);
+    return {label:'Wk '+(w+1), sum};
+  });
+  const maxWeek = Math.max(1, ...weeks.map(w=>w.sum));
+
+  const totalPending = list.reduce((s,p)=>s+Number(p.amount),0);
+  const totalPaidAllTime = DB.payments.reduce((s,p)=> s + p.history.reduce((a,h)=>a+Number(h.amount),0), 0);
+  const donutTotal = totalPending + totalPaidAllTime;
+  const paidPct = donutTotal>0? Math.round(totalPaidAllTime/donutTotal*100) : 0;
+
+  // last 7 days net cash flow (actual cash in vs actual cash paid out)
+  const last7 = [];
+  for(let i=6;i>=0;i--){
+    const iso = addDays(todayISO(), -i);
+    const inAmt = cashInOn(iso);
+    const outAmt = cashOutPaidOn(iso);
+    last7.push({iso, label: parseISO(iso).toLocaleDateString('en-GB',{weekday:'short'}), net: inAmt-outAmt, inAmt, outAmt});
+  }
+  const maxAbsFlow = Math.max(1, ...last7.map(d=>Math.abs(d.net)));
+
+  $main.innerHTML = `
+    <div class="section-title">📊 Reports</div>
+    <div class="section-sub">Cash flow insight for El Sabroso.</div>
+
+    <div class="card">
+      <div class="pay-name" style="margin-bottom:10px;">Net Cash Flow — Last 7 Days</div>
+      ${last7.map(d=>{
+        const isPos = d.net>=0;
+        const color = isPos? 'var(--success)' : 'var(--danger)';
+        const sign = isPos? '+' : '−';
+        return `
+        <div class="bar-row">
+          <div class="bar-label">${d.label}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(Math.abs(d.net)/maxAbsFlow*100)||0}%; background:${color};"></div></div>
+          <div class="bar-val" style="color:${color};">${sign} ${fmtMoney(Math.abs(d.net))}</div>
+        </div>`;
+      }).join('')}
+      <div class="section-sub" style="margin:8px 0 0;">Based on cash-in entries logged and payments actually marked paid each day.</div>
+    </div>
+
+    <div class="card">
+      <div class="pay-name" style="margin-bottom:10px;">Paid vs Pending (all time)</div>
+      <div class="donut-wrap">
+        <div class="donut" style="background:conic-gradient(var(--success) 0% ${paidPct}%, var(--flame1) ${paidPct}% 100%);">
+          <div class="donut-center"><b>${paidPct}%</b><span>Paid</span></div>
+        </div>
+        <div class="legend">
+          <div><span class="dot" style="background:var(--success);"></span>Paid — ${fmtMoney(totalPaidAllTime)}</div>
+          <div><span class="dot" style="background:var(--flame1);"></span>Pending — ${fmtMoney(totalPending)}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="pay-name" style="margin-bottom:10px;">Cash Requirement — Next 4 Weeks</div>
+      ${weeks.map(w=>`
+        <div class="bar-row">
+          <div class="bar-label">${w.label}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(w.sum/maxWeek*100)||0}%"></div></div>
+          <div class="bar-val">${fmtMoney(w.sum)}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="pay-name" style="margin-bottom:10px;">Pending by Category</div>
+      ${Object.keys(byCat).length? Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([cat,val])=>`
+        <div class="bar-row">
+          <div class="bar-label">${escapeHtml(cat)}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(val/maxCat*100)||0}%"></div></div>
+          <div class="bar-val">${fmtMoney(val)}</div>
+        </div>`).join('') : '<div class="section-sub">No pending payments.</div>'}
+    </div>
+  `;
+}
+
+/* ===================== REMINDERS ===================== */
+function renderReminders(){
+  const list = activePayments().map(p=>({p, dd:daysDiff(p.dueDate)}))
+    .filter(x=> x.p.reminders && x.p.reminders.some(r=> x.dd<=r ))
+    .sort((a,b)=>a.dd-b.dd);
+
+  const notifOn = DB.settings.notifEnabled && (typeof Notification!=='undefined' && Notification.permission==='granted');
+
+  $main.innerHTML = `
+    <div class="section-title">🔔 Reminders</div>
+    <div class="section-sub">Upcoming alerts based on each payment's reminder settings.</div>
+
+    <div class="card">
+      <div class="settings-row" style="padding:6px 4px; border:none;">
+        <div>
+          <div class="lbl">Browser Notifications</div>
+          <div class="sub">${notifOn? 'Enabled — alerts will pop up while the app is open.' : 'Get a popup reminder while this app is open in your browser.'}</div>
+        </div>
+        <div class="switch ${notifOn?'on':''}" id="notifSwitch"><div class="knob"></div></div>
+      </div>
+    </div>
+
+    <div>${list.length? list.map(x=>{
+      const st = paymentStatus(x.p);
+      const bg = st==='overdue' ? 'var(--danger-bg)' : st==='today' ? 'var(--warning-bg)' : 'rgba(255,122,0,0.12)';
+      const color = st==='overdue' ? 'var(--danger)' : st==='today' ? 'var(--warning)' : 'var(--flame2)';
+      return `<div class="card">
+        <div class="reminder-row" style="padding:0; border:none;">
+          <div class="reminder-icon" style="background:${bg}; color:${color};">${st==='overdue'?'🔴':st==='today'?'🟠':'🔔'}</div>
+          <div style="flex:1;">
+            <div class="pay-name">${escapeHtml(x.p.name)}</div>
+            <div class="pay-meta">${fmtDateHuman(x.p.dueDate)} · ${fmtDayLabel(x.p.dueDate)} · ${fmtMoney(x.p.amount)}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('') : emptyState('🔕','No active reminders','Reminders will appear as due dates approach.')}</div>
+  `;
+  document.getElementById('notifSwitch').onclick = ()=>{
+    if(!notifOn){
+      if(typeof Notification==='undefined'){ toast('Notifications not supported on this device'); return; }
+      Notification.requestPermission().then(perm=>{
+        DB.settings.notifEnabled = perm==='granted';
+        save(); renderReminders();
+        if(perm==='granted') toast('🔔 Notifications enabled');
+      });
+    } else {
+      DB.settings.notifEnabled = false; save(); renderReminders();
+    }
+  };
+}
+
+function checkAndFireNotifications(){
+  if(!DB.settings.notifEnabled || typeof Notification==='undefined' || Notification.permission!=='granted') return;
+  const firedKey = 'elsabroso_fired_' + todayISO();
+  let fired = JSON.parse(sessionStorage.getItem(firedKey) || '[]');
+  activePayments().forEach(p=>{
+    const dd = daysDiff(p.dueDate);
+    if(p.reminders && p.reminders.includes(dd) && !fired.includes(p.id+'_'+dd)){
+      try{
+        new Notification('El Sabroso Payment Reminder', {
+          body: p.name + ' — ' + fmtMoney(p.amount) + ' due ' + fmtDayLabel(p.dueDate),
+          icon: 'icon-192.png'
+        });
+      }catch(e){}
+      fired.push(p.id+'_'+dd);
+    }
+  });
+  sessionStorage.setItem(firedKey, JSON.stringify(fired));
+}
+
+/* ===================== SETTINGS ===================== */
+function renderSettings(){
+  $main.innerHTML = `
+    <div class="section-title">⚙️ Settings</div>
+    <div class="section-sub">Manage your app preferences and data.</div>
+
+    <div class="settings-group">
+      <div class="settings-row">
+        <div><div class="lbl">Cloud Sync</div><div class="sub">Firebase — el-sabroso-df2b8</div></div>
+        <span id="syncBadge" style="font-weight:700; font-size:13px; color:var(--text-dimmer);">⏳ Connecting…</span>
+      </div>
+      <div class="settings-row">
+        <div><div class="lbl">Business Name</div></div>
+        <input type="text" id="setBizName" value="${escapeHtml(DB.settings.businessName)}">
+      </div>
+      <div class="settings-row">
+        <div><div class="lbl">Currency</div><div class="sub">Fixed for this app</div></div>
+        <select disabled><option>PHP — Philippine Peso (₱)</option></select>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-row" style="display:block;">
+        <div class="lbl" style="margin-bottom:8px;">Default Reminder Days (for new payments)</div>
+        <div class="chip-toggle-row" id="defaultReminderChips">
+          ${[7,3,1,0].map(d=>`<div class="chip-toggle ${DB.settings.defaultReminders.includes(d)?'active':''}" data-d="${d}">${d===0?'Due day':d+'d'}</div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-row" id="rowExport" style="cursor:pointer;">
+        <div><div class="lbl">📤 Export Data (JSON)</div><div class="sub">Backup all payments to a file</div></div>
+        <span>›</span>
+      </div>
+      <div class="settings-row" style="cursor:pointer;">
+        <div><div class="lbl">📥 Import Data (JSON)</div><div class="sub">Restore from a backup file</div></div>
+        <input type="file" id="importFile" accept="application/json" style="width:110px; padding:0; border:none; font-size:11px;">
+      </div>
+      <div class="settings-row" id="rowClear" style="cursor:pointer;">
+        <div><div class="lbl" style="color:var(--danger);">🗑️ Clear All Data</div><div class="sub">Remove every payment permanently</div></div>
+        <span>›</span>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-row" style="display:block;">
+        <div class="lbl">🔥 About</div>
+        <div class="sub" style="margin-top:6px; line-height:1.5;">El Sabroso Payment Schedule v1.0 — an installable PWA to track supplier, rent, utility, staff payments and daily cash flow. Data is stored on this device and synced to Firebase when the Cloud Sync status above says "Synced".</div>
+      </div>
+    </div>
+  `;
+  document.getElementById('setBizName').addEventListener('change', e=>{
+    DB.settings.businessName = e.target.value || 'El Sabroso Lechon Manok'; save(); toast('Saved');
+  });
+  document.querySelectorAll('#defaultReminderChips .chip-toggle').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const d = Number(el.dataset.d);
+      const arr = DB.settings.defaultReminders;
+      const idx = arr.indexOf(d);
+      if(idx>-1) arr.splice(idx,1); else arr.push(d);
+      save(); renderSettings();
+    });
+  });
+  document.getElementById('rowExport').addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(DB,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'el-sabroso-payments-'+todayISO()+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast('📤 Exported');
+  });
+  document.getElementById('importFile').addEventListener('change', (e)=>{
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const parsed = JSON.parse(reader.result);
+        if(!parsed.payments) throw new Error('bad file');
+        DB = normalizeDB(parsed); save(); toast('📥 Data imported'); ui.view='dashboard'; render();
+      }catch(err){ toast('⚠️ Invalid file'); }
+    };
+    reader.readAsText(file);
+  });
+  document.getElementById('rowClear').addEventListener('click', ()=>{
+    if(confirm('This will permanently delete ALL payments and history. Continue?')){
+      DB = defaultData(); DB.payments = []; save(); toast('🗑️ All data cleared'); render();
+    }
+  });
+  updateSyncBadge();
+}
+
+/* ===================== MODAL (Add/Edit) ===================== */
+const modalBackdrop = document.getElementById('modalBackdrop');
+const paymentForm = document.getElementById('paymentForm');
+let editingId = null;
+
+function openModal(id){
+  editingId = id || null;
+  document.getElementById('modalTitleTxt').textContent = id? 'Edit Payment' : 'Add Payment';
+  document.getElementById('btnDeletePayment').style.display = id? 'inline-flex' : 'none';
+  const reminderSel = new Set(DB.settings.defaultReminders);
+  if(id){
+    const p = DB.payments.find(x=>x.id===id);
+    document.getElementById('pId').value = p.id;
+    document.getElementById('pName').value = p.name;
+    document.getElementById('pCategory').value = p.category;
+    document.getElementById('pAmount').value = p.amount;
+    document.getElementById('pFrequency').value = p.frequency;
+    document.getElementById('pDueDate').value = p.dueDate;
+    document.getElementById('pNotes').value = p.notes||'';
+    reminderSel.clear(); (p.reminders||[]).forEach(r=>reminderSel.add(r));
+  } else {
+    paymentForm.reset();
+    document.getElementById('pId').value = '';
+    document.getElementById('pDueDate').value = todayISO();
+    document.getElementById('pCategory').value = 'Supplier';
+    document.getElementById('pFrequency').value = 'weekly';
+  }
+  document.querySelectorAll('#reminderChips .chip-toggle').forEach(el=>{
+    el.classList.toggle('active', reminderSel.has(Number(el.dataset.d)));
+  });
+  modalBackdrop.classList.add('open');
+}
+function closeModal(){ modalBackdrop.classList.remove('open'); editingId=null; }
+
+document.getElementById('fabAdd').addEventListener('click', ()=>openModal());
+document.getElementById('modalClose').addEventListener('click', closeModal);
+modalBackdrop.addEventListener('click', (e)=>{ if(e.target===modalBackdrop) closeModal(); });
+
+document.querySelectorAll('#reminderChips .chip-toggle').forEach(el=>{
+  el.addEventListener('click', ()=> el.classList.toggle('active'));
+});
+
+paymentForm.addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const id = document.getElementById('pId').value;
+  const reminders = [...document.querySelectorAll('#reminderChips .chip-toggle.active')].map(el=>Number(el.dataset.d));
+  const data = {
+    name: document.getElementById('pName').value.trim(),
+    category: document.getElementById('pCategory').value,
+    amount: parseFloat(document.getElementById('pAmount').value)||0,
+    frequency: document.getElementById('pFrequency').value,
+    dueDate: document.getElementById('pDueDate').value,
+    notes: document.getElementById('pNotes').value.trim(),
+    reminders
+  };
+  if(id){
+    const p = DB.payments.find(x=>x.id===id);
+    Object.assign(p, data);
+    toast('✏️ Payment updated');
+  } else {
+    DB.payments.push(Object.assign({id:uid(), status:'pending', history:[]}, data));
+    toast('➕ Payment added');
+  }
+  save();
+  closeModal();
+  render();
+});
+
+document.getElementById('btnDeletePayment').addEventListener('click', ()=>{
+  if(editingId) deletePayment(editingId);
+});
+
+/* ===================== CASH IN MODAL ===================== */
+const cashInModalBackdrop = document.getElementById('cashInModalBackdrop');
+const cashInForm = document.getElementById('cashInForm');
+let editingCashInId = null;
+
+function openCashInModal(id){
+  editingCashInId = id || null;
+  document.getElementById('cashInModalTitleTxt').textContent = id? 'Edit Cash In' : 'Add Cash In';
+  document.getElementById('btnDeleteCashIn').style.display = id? 'inline-flex' : 'none';
+  if(id){
+    const c = DB.cashIn.find(x=>x.id===id);
+    document.getElementById('cId').value = c.id;
+    document.getElementById('cDate').value = c.date;
+    document.getElementById('cAmount').value = c.amount;
+    document.getElementById('cSource').value = c.source;
+    document.getElementById('cNotes').value = c.notes||'';
+  } else {
+    cashInForm.reset();
+    document.getElementById('cId').value = '';
+    document.getElementById('cDate').value = todayISO();
+    document.getElementById('cSource').value = 'Walk-in Sales';
+  }
+  cashInModalBackdrop.classList.add('open');
+}
+function closeCashInModal(){ cashInModalBackdrop.classList.remove('open'); editingCashInId=null; }
+
+document.getElementById('cashInModalClose').addEventListener('click', closeCashInModal);
+cashInModalBackdrop.addEventListener('click', (e)=>{ if(e.target===cashInModalBackdrop) closeCashInModal(); });
+
+cashInForm.addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const id = document.getElementById('cId').value;
+  const data = {
+    date: document.getElementById('cDate').value,
+    amount: parseFloat(document.getElementById('cAmount').value)||0,
+    source: document.getElementById('cSource').value,
+    notes: document.getElementById('cNotes').value.trim()
+  };
+  if(id){
+    const c = DB.cashIn.find(x=>x.id===id);
+    Object.assign(c, data);
+    toast('✏️ Cash-in updated');
+  } else {
+    DB.cashIn.push(Object.assign({id:uid()}, data));
+    toast('💵 Cash-in added');
+  }
+  save();
+  closeCashInModal();
+  render();
+});
+
+document.getElementById('btnDeleteCashIn').addEventListener('click', ()=>{
+  if(editingCashInId) deleteCashInEntry(editingCashInId);
+});
+
+function bindCardActions(){
+  $main.querySelectorAll('[data-action]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const action = btn.dataset.action;
+      if(action==='pay') markPaid(id);
+      else if(action==='edit') openModal(id);
+      else if(action==='delete') deletePayment(id);
+      else if(action==='editcashin') openCashInModal(id);
+      else if(action==='deletecashin') deleteCashInEntry(id);
+    });
+  });
+}
+
+/* ===================== NAV / DRAWER ===================== */
+const drawer = document.getElementById('drawer');
+const backdrop = document.getElementById('backdrop');
+function openDrawer(){ drawer.classList.add('open'); backdrop.classList.add('open'); }
+function closeDrawer(){ drawer.classList.remove('open'); backdrop.classList.remove('open'); }
+document.getElementById('btnMenu').addEventListener('click', openDrawer);
+backdrop.addEventListener('click', closeDrawer);
+document.querySelectorAll('.nav-item').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    ui.view = el.dataset.view;
+    closeDrawer();
+    window.scrollTo({top:0, behavior:'instant'});
+    render();
+  });
+});
+
+/* ===================== SEARCH ===================== */
+const searchbar = document.getElementById('searchbar');
+const searchInput = document.getElementById('searchInput');
+document.getElementById('btnSearch').addEventListener('click', ()=>{
+  searchbar.classList.add('open');
+  document.getElementById('appMain').classList.add('search-open');
+  searchInput.focus();
+});
+document.getElementById('btnSearchClose').addEventListener('click', ()=>{
+  searchbar.classList.remove('open');
+  document.getElementById('appMain').classList.remove('search-open');
+  ui.search=''; searchInput.value=''; render();
+});
+searchInput.addEventListener('input', (e)=>{ ui.search = e.target.value; render(); });
+
+/* ===================== TOAST ===================== */
+function toast(msg){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  wrap.appendChild(el);
+  requestAnimationFrame(()=> el.classList.add('show'));
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(), 300); }, 2400);
+}
+
+/* ===================== PWA INSTALL ===================== */
+let deferredPrompt = null;
+const installBanner = document.getElementById('installBanner');
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredPrompt = e;
+  if(!localStorage.getItem('elsabroso_install_dismissed')) installBanner.classList.add('show');
+});
+document.getElementById('btnInstall').addEventListener('click', async ()=>{
+  installBanner.classList.remove('show');
+  if(deferredPrompt){ deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; }
+});
+document.getElementById('btnInstallClose').addEventListener('click', ()=>{
+  installBanner.classList.remove('show');
+  localStorage.setItem('elsabroso_install_dismissed','1');
+});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./service-worker.js').then((reg)=>{
+      // if an updated worker is already waiting, activate it right away
+      if(reg.waiting){ reg.waiting.postMessage('SKIP_WAITING'); }
+      reg.addEventListener('updatefound', ()=>{
+        const newSW = reg.installing;
+        if(!newSW) return;
+        newSW.addEventListener('statechange', ()=>{
+          if(newSW.state==='installed' && navigator.serviceWorker.controller){
+            newSW.postMessage('SKIP_WAITING');
+          }
+        });
+      });
+      // check for a newer service-worker.js in the background
+      reg.update().catch(()=>{});
+    }).catch(()=>{});
+
+    let refreshed = false;
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+      if(refreshed) return;
+      refreshed = true;
+      window.location.reload();
+    });
+  });
+}
+
+/* ===================== INIT ===================== */
+render();
+checkAndFireNotifications();
+setInterval(checkAndFireNotifications, 60000);
+initFirebase();
+
+})();
+</script>
+</body>
+</html>
