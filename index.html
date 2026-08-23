@@ -173,6 +173,20 @@ button{font-family:inherit;}
 .stat-num{font-size:23px; font-weight:800; margin-top:4px; color:var(--cream);}
 .stat-num.flame{color: var(--flame1);}
 .stat-num.danger{color:var(--danger);}
+.stat-num.pos{color:var(--success);}
+.stat-num.neg{color:var(--danger);}
+.flow-breakdown{display:flex; gap:14px; margin-top:6px; font-size:12px; color:var(--text-dim); font-weight:600;}
+.flow-breakdown b{color:var(--cream); font-weight:800;}
+
+.brand-hero{
+  display:flex; align-items:center; gap:14px; margin-bottom:18px; padding:14px;
+  background:linear-gradient(120deg, #FFF6E4, #FFFFFF 65%);
+  border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+}
+.brand-hero img{width:58px; height:58px; border-radius:50%; border:2px solid var(--gold); object-fit:cover; flex:none;}
+.brand-hero .htxt{min-width:0;}
+.brand-hero .htxt .hname{font-family:'Baloo 2',sans-serif; font-weight:800; font-size:17px; color:var(--red-deep); line-height:1.15;}
+.brand-hero .htxt .htag{font-size:11.5px; color:var(--text-dim); margin-top:2px; line-height:1.3;}
 .stat-foot{font-size:11.5px; color:var(--text-dimmer); margin-top:2px;}
 
 .flamebar-track{height:8px; border-radius:6px; background:var(--input-bg); overflow:hidden; margin-top:10px;}
@@ -374,6 +388,7 @@ button{font-family:inherit;}
   </div>
   <div class="drawer-nav" id="drawerNav">
     <div class="nav-item" data-view="dashboard"><span class="ic">🏠</span><span class="label">Dashboard</span></div>
+    <div class="nav-item" data-view="cashin"><span class="ic">💵</span><span class="label">Cash In</span></div>
     <div class="nav-item" data-view="add"><span class="ic">➕</span><span class="label">Add Payment</span></div>
     <div class="nav-divider"></div>
     <div class="nav-item" data-view="daily"><span class="ic">☀️</span><span class="label">Daily Schedule</span></div>
@@ -472,6 +487,46 @@ button{font-family:inherit;}
   </div>
 </div>
 
+<!-- Cash In Modal -->
+<div class="modal-backdrop" id="cashInModalBackdrop">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title"><span id="cashInModalTitleTxt">Add Cash In</span><span id="cashInModalClose" style="cursor:pointer;color:var(--text-dim);font-size:20px;">✕</span></div>
+    <form id="cashInForm">
+      <input type="hidden" id="cId">
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="cDate" required>
+      </div>
+      <div class="field">
+        <label>Amount (₱)</label>
+        <div class="amount-input-wrap">
+          <span class="cur">₱</span>
+          <input type="number" id="cAmount" min="0" step="0.01" placeholder="0.00" required>
+        </div>
+      </div>
+      <div class="field">
+        <label>Source</label>
+        <select id="cSource">
+          <option>Walk-in Sales</option>
+          <option>Online Orders</option>
+          <option>Catering / Bulk Orders</option>
+          <option>Delivery Apps</option>
+          <option>Other Income</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Notes</label>
+        <textarea id="cNotes" placeholder="Optional notes…"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-danger" id="btnDeleteCashIn" style="display:none;">Delete</button>
+        <button type="submit" class="btn btn-primary btn-block">Save Cash In</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 (function(){
 "use strict";
@@ -500,6 +555,8 @@ function fmtDayLabel(iso){
   return 'in '+dd+'d';
 }
 
+const CASH_SOURCES = ['Walk-in Sales','Online Orders','Catering / Bulk Orders','Delivery Apps','Other Income'];
+
 function defaultData(){
   const t = todayISO();
   return {
@@ -512,6 +569,14 @@ function defaultData(){
       {id:uid(), name:'Gas Cylinder Refill', category:'Supplier', amount:450, frequency:'weekly', dueDate:t, notes:'Charcoal + gas', reminders:[1,0], status:'pending', history:[]},
       {id:uid(), name:'Packaging Boxes', category:'Supplier', amount:600, frequency:'daily', dueDate:t, notes:'', reminders:[0], status:'pending', history:[]},
       {id:uid(), name:'POS System Subscription', category:'Equipment', amount:299, frequency:'monthly', dueDate:addDays(t,-6), notes:'', reminders:[3,0], status:'pending', history:[]}
+    ],
+    cashIn:[
+      {id:uid(), date:addDays(t,-3), amount:9200, source:'Walk-in Sales', notes:''},
+      {id:uid(), date:addDays(t,-2), amount:7600, source:'Walk-in Sales', notes:''},
+      {id:uid(), date:addDays(t,-2), amount:1800, source:'Delivery Apps', notes:''},
+      {id:uid(), date:addDays(t,-1), amount:10450, source:'Walk-in Sales', notes:''},
+      {id:uid(), date:t, amount:6200, source:'Walk-in Sales', notes:'Morning sales so far'},
+      {id:uid(), date:t, amount:1500, source:'Online Orders', notes:''}
     ]
   };
 }
@@ -524,6 +589,7 @@ function load(){
     const parsed = JSON.parse(raw);
     if(!parsed.settings) parsed.settings = {businessName:'El Sabroso Lechon Manok', defaultReminders:[3,1,0], notifEnabled:false};
     if(!parsed.payments) parsed.payments = [];
+    if(!parsed.cashIn) parsed.cashIn = [];
     return parsed;
   }catch(e){ return defaultData(); }
 }
@@ -531,6 +597,7 @@ function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(DB)); }
 
 /* ===================== STATE ===================== */
 let ui = { view:'dashboard', search:'', calMonth: new Date(), calSelected: todayISO() };
+
 
 /* ===================== STATUS LOGIC ===================== */
 function isOnceDone(p){ return p.frequency==='once' && p.status==='paid'; }
@@ -592,10 +659,39 @@ function inThisMonth(iso){
   return d.getFullYear()===t.getFullYear() && d.getMonth()===t.getMonth();
 }
 
+/* ===================== CASH IN / CASH FLOW HELPERS ===================== */
+function cashInOn(iso){ return DB.cashIn.filter(c=>c.date===iso).reduce((s,c)=>s+Number(c.amount),0); }
+function cashOutDueOn(iso){ return activePayments().filter(p=>p.dueDate===iso).reduce((s,p)=>s+Number(p.amount),0); }
+function cashOutPaidOn(iso){
+  let sum = 0;
+  DB.payments.forEach(p=> p.history.forEach(h=>{ if(h.paidOn===iso) sum += Number(h.amount); }));
+  return sum;
+}
+function netFlowPlannedOn(iso){ return cashInOn(iso) - cashOutDueOn(iso); }
+function netFlowActualOn(iso){ return cashInOn(iso) - cashOutPaidOn(iso); }
+function sumCashIn(list){ return list.reduce((s,c)=>s+Number(c.amount),0); }
+function cashInSearchFilter(list){
+  const q = ui.search.trim().toLowerCase();
+  if(!q) return list;
+  return list.filter(c => c.source.toLowerCase().includes(q) || (c.notes||'').toLowerCase().includes(q));
+}
+function sortCashInDesc(list){ return [...list].sort((a,b)=> b.date.localeCompare(a.date) || (b.id>a.id?1:-1)); }
+
+function deleteCashInEntry(id){
+  const c = DB.cashIn.find(x=>x.id===id);
+  if(!c) return;
+  if(!confirm('Delete this ₱'+Number(c.amount).toLocaleString('en-PH')+' cash-in entry?')) return;
+  DB.cashIn = DB.cashIn.filter(x=>x.id!==id);
+  save();
+  closeCashInModal();
+  toast('🗑️ Cash-in entry deleted');
+  render();
+}
+
 /* ===================== RENDER ROOT ===================== */
 const $main = document.getElementById('appMain');
 const NAV_TITLES = {
-  dashboard:'Dashboard', add:'Add Payment', daily:'Daily Schedule', weekly:'Weekly Schedule',
+  dashboard:'Dashboard', cashin:'Cash In', add:'Add Payment', daily:'Daily Schedule', weekly:'Weekly Schedule',
   monthly:'Monthly Schedule', calendar:'Calendar', overdue:'Overdue', paid:'Paid Payments',
   reports:'Reports', reminders:'Reminders', settings:'Settings'
 };
@@ -607,6 +703,7 @@ function render(){
   document.getElementById('brandSub').textContent = NAV_TITLES[ui.view] || 'Payment Schedule';
 
   if(ui.view==='dashboard') renderDashboard();
+  else if(ui.view==='cashin') renderCashIn();
   else if(ui.view==='add') { openModal(); ui.view='dashboard'; renderDashboard(); }
   else if(ui.view==='daily') renderSchedule('daily');
   else if(ui.view==='weekly') renderSchedule('weekly');
@@ -666,11 +763,33 @@ function renderDashboard(){
 
   const upcoming = sortByDue(list).slice(0,5);
 
+  const cashInToday = cashInOn(todayISO());
+  const cashOutToday = cashOutDueOn(todayISO());
+  const netToday = cashInToday - cashOutToday;
+  const netClass = netToday>=0 ? 'pos' : 'neg';
+  const netSign = netToday>=0 ? '+' : '−';
+
   $main.innerHTML = `
+    <div class="brand-hero">
+      <img src="icons/icon-192.png" alt="El Sabroso logo">
+      <div class="htxt">
+        <div class="hname">El Sabroso Lechon Manok</div>
+        <div class="htag">Manok na malasa, Balot ng Init, Lechon Manok na malupit! 🔥</div>
+      </div>
+    </div>
+
     <div class="section-title">👋 Kumusta, Boss!</div>
     <div class="section-sub">Here's your cash overview for today, ${fmtDateHuman(todayISO())}.</div>
 
     <div class="stat-grid">
+      <div class="stat-card wide">
+        <div class="stat-label">Net Cash Flow — Today</div>
+        <div class="stat-num ${netClass}">${netSign} ${fmtMoney(Math.abs(netToday))}</div>
+        <div class="flow-breakdown">
+          <span>💵 Cash In: <b>${fmtMoney(cashInToday)}</b></span>
+          <span>💸 Cash Out: <b>${fmtMoney(cashOutToday)}</b></span>
+        </div>
+      </div>
       <div class="stat-card">
         <div class="stat-label">Due Today</div>
         <div class="stat-num">${dueToday.length}</div>
@@ -716,16 +835,104 @@ function renderSchedule(kind){
   const total = list.reduce((s,p)=>s+Number(p.amount),0);
   const titleMap = {daily:['☀️ Daily Schedule','Payments due today'], weekly:['📆 Weekly Schedule','Payments due this week (Mon–Sun)'], monthly:['🗓️ Monthly Schedule','Payments due this calendar month']};
 
-  $main.innerHTML = `
-    <div class="section-title">${titleMap[kind][0]}</div>
-    <div class="section-sub">${titleMap[kind][1]}</div>
+  let flowBlock = '';
+  if(kind==='daily'){
+    const cIn = cashInOn(todayISO());
+    const net = cIn - total;
+    const netClass = net>=0 ? 'pos' : 'neg';
+    const netSign = net>=0 ? '+' : '−';
+    flowBlock = `
+    <div class="stat-grid" style="margin-bottom:4px;">
+      <div class="stat-card">
+        <div class="stat-label">💵 Cash In Today</div>
+        <div class="stat-num pos">${fmtMoney(cIn)}</div>
+        <div class="stat-foot">logged so far today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">💸 Cash Out Today</div>
+        <div class="stat-num flame">${fmtMoney(total)}</div>
+        <div class="stat-foot">${list.length} payment${list.length===1?'':'s'} due</div>
+      </div>
+      <div class="stat-card wide">
+        <div class="stat-label">Net Cash Flow — Today</div>
+        <div class="stat-num ${netClass}">${netSign} ${fmtMoney(Math.abs(net))}</div>
+        <div class="stat-foot">cash in minus cash out due today</div>
+      </div>
+    </div>`;
+  } else {
+    flowBlock = `
     <div class="stat-card wide" style="margin-bottom:16px;">
       <div class="stat-label">Cash Requirement</div>
       <div class="stat-num flame">${fmtMoney(total)}</div>
       <div class="stat-foot">${list.length} payment${list.length===1?'':'s'}</div>
-    </div>
+    </div>`;
+  }
+
+  $main.innerHTML = `
+    <div class="section-title">${titleMap[kind][0]}</div>
+    <div class="section-sub">${titleMap[kind][1]}</div>
+    ${flowBlock}
     <div>${list.length? list.map(p=>paymentCard(p)).join('') : emptyState('🍗','Nothing scheduled','No payments found for this period.')}</div>
   `;
+  bindCardActions();
+}
+
+/* ===================== CASH IN ===================== */
+function cashInCard(c){
+  return `
+  <div class="card" data-id="${c.id}">
+    <div class="card-row">
+      <div style="min-width:0;">
+        <div class="pay-name">${escapeHtml(c.source)}</div>
+        <div class="pay-meta">
+          <span>📅 ${fmtDateHuman(c.date)} · ${fmtDayLabel(c.date)}</span>
+        </div>
+        ${c.notes? `<div class="pay-meta" style="margin-top:4px;">📝 ${escapeHtml(c.notes)}</div>` : ''}
+      </div>
+      <div class="pay-amount" style="color:var(--success);">+ ${fmtMoney(c.amount)}</div>
+    </div>
+    <div class="card-actions">
+      <button class="btn btn-ghost btn-sm" data-action="editcashin" data-id="${c.id}">✏️ Edit</button>
+      <button class="btn btn-danger btn-sm" data-action="deletecashin" data-id="${c.id}">🗑️</button>
+    </div>
+  </div>`;
+}
+
+function renderCashIn(){
+  const t = todayISO();
+  const todayList = DB.cashIn.filter(c=>c.date===t);
+  const weekList = DB.cashIn.filter(c=>inThisWeek(c.date));
+  const monthList = DB.cashIn.filter(c=>inThisMonth(c.date));
+  const list = sortCashInDesc(cashInSearchFilter(DB.cashIn));
+
+  $main.innerHTML = `
+    <div class="section-title">💵 Cash In</div>
+    <div class="section-sub">Log your daily sales and income to track real cash flow.</div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Today</div>
+        <div class="stat-num pos">${fmtMoney(sumCashIn(todayList))}</div>
+        <div class="stat-foot">${todayList.length} entr${todayList.length===1?'y':'ies'}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">This Week</div>
+        <div class="stat-num pos">${fmtMoney(sumCashIn(weekList))}</div>
+        <div class="stat-foot">${weekList.length} entr${weekList.length===1?'y':'ies'}</div>
+      </div>
+      <div class="stat-card wide">
+        <div class="stat-label">This Month</div>
+        <div class="stat-num pos">${fmtMoney(sumCashIn(monthList))}</div>
+        <div class="stat-foot">${monthList.length} entr${monthList.length===1?'y':'ies'}</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-block" id="btnAddCashIn" style="margin-bottom:16px;">➕ Add Cash In</button>
+
+    <div class="section-title" style="font-size:16px;">🧾 All Entries</div>
+    <div>${list.length? list.map(cashInCard).join('') : emptyState('💵','No cash-in logged yet','Tap "Add Cash In" to record your first sale.')}</div>
+  `;
+  document.getElementById('btnAddCashIn').addEventListener('click', ()=>openCashInModal());
   bindCardActions();
 }
 
@@ -861,9 +1068,35 @@ function renderReports(){
   const donutTotal = totalPending + totalPaidAllTime;
   const paidPct = donutTotal>0? Math.round(totalPaidAllTime/donutTotal*100) : 0;
 
+  // last 7 days net cash flow (actual cash in vs actual cash paid out)
+  const last7 = [];
+  for(let i=6;i>=0;i--){
+    const iso = addDays(todayISO(), -i);
+    const inAmt = cashInOn(iso);
+    const outAmt = cashOutPaidOn(iso);
+    last7.push({iso, label: parseISO(iso).toLocaleDateString('en-GB',{weekday:'short'}), net: inAmt-outAmt, inAmt, outAmt});
+  }
+  const maxAbsFlow = Math.max(1, ...last7.map(d=>Math.abs(d.net)));
+
   $main.innerHTML = `
     <div class="section-title">📊 Reports</div>
     <div class="section-sub">Cash flow insight for El Sabroso.</div>
+
+    <div class="card">
+      <div class="pay-name" style="margin-bottom:10px;">Net Cash Flow — Last 7 Days</div>
+      ${last7.map(d=>{
+        const isPos = d.net>=0;
+        const color = isPos? 'var(--success)' : 'var(--danger)';
+        const sign = isPos? '+' : '−';
+        return `
+        <div class="bar-row">
+          <div class="bar-label">${d.label}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(Math.abs(d.net)/maxAbsFlow*100)||0}%; background:${color};"></div></div>
+          <div class="bar-val" style="color:${color};">${sign} ${fmtMoney(Math.abs(d.net))}</div>
+        </div>`;
+      }).join('')}
+      <div class="section-sub" style="margin:8px 0 0;">Based on cash-in entries logged and payments actually marked paid each day.</div>
+    </div>
 
     <div class="card">
       <div class="pay-name" style="margin-bottom:10px;">Paid vs Pending (all time)</div>
@@ -1130,6 +1363,61 @@ document.getElementById('btnDeletePayment').addEventListener('click', ()=>{
   if(editingId) deletePayment(editingId);
 });
 
+/* ===================== CASH IN MODAL ===================== */
+const cashInModalBackdrop = document.getElementById('cashInModalBackdrop');
+const cashInForm = document.getElementById('cashInForm');
+let editingCashInId = null;
+
+function openCashInModal(id){
+  editingCashInId = id || null;
+  document.getElementById('cashInModalTitleTxt').textContent = id? 'Edit Cash In' : 'Add Cash In';
+  document.getElementById('btnDeleteCashIn').style.display = id? 'inline-flex' : 'none';
+  if(id){
+    const c = DB.cashIn.find(x=>x.id===id);
+    document.getElementById('cId').value = c.id;
+    document.getElementById('cDate').value = c.date;
+    document.getElementById('cAmount').value = c.amount;
+    document.getElementById('cSource').value = c.source;
+    document.getElementById('cNotes').value = c.notes||'';
+  } else {
+    cashInForm.reset();
+    document.getElementById('cId').value = '';
+    document.getElementById('cDate').value = todayISO();
+    document.getElementById('cSource').value = 'Walk-in Sales';
+  }
+  cashInModalBackdrop.classList.add('open');
+}
+function closeCashInModal(){ cashInModalBackdrop.classList.remove('open'); editingCashInId=null; }
+
+document.getElementById('cashInModalClose').addEventListener('click', closeCashInModal);
+cashInModalBackdrop.addEventListener('click', (e)=>{ if(e.target===cashInModalBackdrop) closeCashInModal(); });
+
+cashInForm.addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const id = document.getElementById('cId').value;
+  const data = {
+    date: document.getElementById('cDate').value,
+    amount: parseFloat(document.getElementById('cAmount').value)||0,
+    source: document.getElementById('cSource').value,
+    notes: document.getElementById('cNotes').value.trim()
+  };
+  if(id){
+    const c = DB.cashIn.find(x=>x.id===id);
+    Object.assign(c, data);
+    toast('✏️ Cash-in updated');
+  } else {
+    DB.cashIn.push(Object.assign({id:uid()}, data));
+    toast('💵 Cash-in added');
+  }
+  save();
+  closeCashInModal();
+  render();
+});
+
+document.getElementById('btnDeleteCashIn').addEventListener('click', ()=>{
+  if(editingCashInId) deleteCashInEntry(editingCashInId);
+});
+
 function bindCardActions(){
   $main.querySelectorAll('[data-action]').forEach(btn=>{
     btn.addEventListener('click', (e)=>{
@@ -1139,6 +1427,8 @@ function bindCardActions(){
       if(action==='pay') markPaid(id);
       else if(action==='edit') openModal(id);
       else if(action==='delete') deletePayment(id);
+      else if(action==='editcashin') openCashInModal(id);
+      else if(action==='deletecashin') deleteCashInEntry(id);
     });
   });
 }
